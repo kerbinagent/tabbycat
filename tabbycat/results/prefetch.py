@@ -129,6 +129,7 @@ def populate_results(ballotsubs, tournament=None):
 
             if not result.is_voting:
                 result.set_score(ss.debate_team.side, ss.position, ss.score)
+                result.set_note(ss.debate_team.side, ss.position, ss.note)
 
     # Populate scoresheets (load_scoresheets)
 
@@ -155,6 +156,8 @@ def populate_results(ballotsubs, tournament=None):
         if result.uses_speakers and result.is_voting:
             result.set_score(ssba.debate_adjudicator.adjudicator, ssba.debate_team.side,
                 ssba.position, ssba.score)
+            result.set_note(ssba.debate_adjudicator.adjudicator, ssba.debate_team.side,
+                ssba.position, ssba.note)
 
     # Populate advancing (load_advancing)
     teamscores = TeamScore.objects.filter(

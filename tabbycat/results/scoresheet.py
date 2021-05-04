@@ -57,6 +57,7 @@ class ScoresMixin:
         super().__init__(*args, **kwargs)
         self.positions = positions
         self.scores = {side: dict.fromkeys(self.positions, None) for side in self.sides}
+        self.notes = {side: dict.fromkeys(self.positions, None) for side in self.sides}
 
     def is_complete(self):
         scores_complete = all(self.scores[s][p] is not None for s in self.sides
@@ -68,6 +69,12 @@ class ScoresMixin:
 
     def get_score(self, side, position):
         return self.scores[side][position]
+
+    def set_note(self, side, position, note):
+        self.notes[side][position] = note
+
+    def get_note(self, side, position):
+        return self.notes[side][position]
 
     def get_total(self, side):
         scores = [self.scores[side][p] for p in self.positions]

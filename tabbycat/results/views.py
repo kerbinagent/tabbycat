@@ -647,7 +647,9 @@ class OldPublicNewBallotSetByRandomisedUrlView(SingleObjectByRandomisedUrlMixin,
         return reverse_tournament('privateurls-person-index', self.tournament, kwargs={'url_key': self.kwargs['url_key']})
 
     def is_page_enabled(self, tournament):
-        return tournament.pref('participant_ballots') == 'private-urls'
+        adj = Adjudicator.objects.get(url_key=self.kwargs.get('url_key'))
+        debateadj = DebateAdjudicator.objects.get(adjudicator=adj, debate__round=self.tournament.current_round)
+        return tournament.pref('participant_ballots') == 'private-urls' and (not debateadj.type == DebateAdjudicator.TYPE_TRAINEE)
 
 
 class PostPublicBallotSetSubmissionURLView(TournamentMixin, TemplateView):
@@ -744,12 +746,12 @@ class AdjudicatorPrivateUrlBallotScoresheetView(RoundMixin, SingleObjectByRandom
         return True
 
     def check_permissions(self):
-        if not self.object.ballotsubmission_set.filter(discarded=False).exists():
+        if not self.object.ballotsubmission_set.filter(confirmed=True).exists():
             logger.warning("Refused public view of ballots for %s: no ballot", self.object)
             return 404, _("There is no result yet for debate %s.") % self.matchup_description()
 
     def get_context_data(self, **kwargs):
-        ballot = self.object.ballotsubmission_set.filter(discarded=False).order_by('version').last()
+        ballot = self.object.ballotsubmission_set.filter(confirmed=True).order_by('version').last()
         kwargs['motion'] = ballot.motion
         kwargs['result'] = ballot.result
         kwargs['use_code_names'] = use_team_code_names(self.tournament, False)

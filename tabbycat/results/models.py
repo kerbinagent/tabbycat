@@ -269,6 +269,7 @@ class SpeakerScoreByAdj(models.Model):
         verbose_name=_("debate team"))
     score = ScoreField(verbose_name=_("score"))
     position = models.IntegerField(verbose_name=_("position"))
+    note = models.CharField(null=True, max_length=1024, verbose_name=_("detailed notes"))
 
     class Meta:
         unique_together = [('debate_adjudicator', 'debate_team', 'position',
@@ -349,6 +350,7 @@ class SpeakerScore(models.Model):
     speaker = models.ForeignKey('participants.Speaker', models.CASCADE, db_index=True,
         verbose_name=_("speaker"))
     score = ScoreField(verbose_name=_("score"))
+    note = models.CharField(null=True, max_length=1024, verbose_name=_("detailed notes"))
     position = models.IntegerField(verbose_name=_("position"))
     ghost = models.BooleanField(default=False,
         verbose_name=_("ghost"),
@@ -366,7 +368,7 @@ class SpeakerScore(models.Model):
 
     def __str__(self):
         return ("[{0.ballot_submission_id}/{0.id}] {0.score} at {0.position} for "
-            "{0.speaker.name} in {0.debate_team!s}").format(self)
+            "{0.speaker.name} in {0.debate_team!s}, note {self.note}").format(self)
 
     def clean(self):
         super().clean()

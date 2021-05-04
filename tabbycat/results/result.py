@@ -454,7 +454,6 @@ class DebateResultByAdjudicator(BaseDebateResult):
 
     def merge_speaker_result(self, result, adj):
         pass
-
     def save(self):
         super().save()
 
@@ -624,7 +623,7 @@ class DebateResultByAdjudicator(BaseDebateResult):
 class DebateResultWithScoresMixin:
     """Mixin to provide methods to interact with SpeakerScore."""
 
-    speakerscore_fields = ['score', 'speaker', 'ghost']
+    speakerscore_fields = ['score', 'speaker', 'ghost', 'note']
 
     uses_declared_winners = False
     uses_speakers = True
@@ -913,9 +912,13 @@ class ConsensusDebateResultWithScores(DebateResultWithScoresMixin, ConsensusDeba
 
         for ss in speakerscore:
             self.set_score(ss.debate_team.side, ss.position, ss.score)
+            self.set_note(ss.debate_team.side, ss.position, ss.note)
 
     def set_score(self, side, position, score):
         self.scoresheet.set_score(side, position, score)
+
+    def set_note(self, side, position, note):
+        self.scoresheet.set_note(side, position, note)
 
     # --------------------------------------------------------------------------
     # Model fields
@@ -925,6 +928,10 @@ class ConsensusDebateResultWithScores(DebateResultWithScoresMixin, ConsensusDeba
         return self.scoresheet.get_score(side, position)
 
     get_score = speakerscore_field_score
+
+    def speakerscore_field_note(self, side, position):
+        return self.scoresheet.get_note(side, position)
+    get_note = speakerscore_field_note
 
     def teamscore_field_score(self, side):
         if self.tournament.pref('teamscore_includes_ghosts'):
@@ -938,7 +945,7 @@ class ConsensusDebateResultWithScores(DebateResultWithScoresMixin, ConsensusDeba
 class DebateResultByAdjudicatorWithScores(DebateResultWithScoresMixin, DebateResultByAdjudicator):
     """Gives access to SpeakerScoreByAdj and scores of TeamScoreByAdj"""
 
-    speakerscorebyadj_fields = ['score']
+    speakerscorebyadj_fields = ['score', 'note']
 
     # --------------------------------------------------------------------------
     # Load and save methods
@@ -957,6 +964,24 @@ class DebateResultByAdjudicatorWithScores(DebateResultWithScoresMixin, DebateRes
         for ssba in speakerscorebyadjs:
             self.set_score(ssba.debate_adjudicator.adjudicator,
                            ssba.debate_team.side, ssba.position, ssba.score)
+            self.set_note(ssba.debate_adjudicator.adjudicator,
+                           ssba.debate_team.side, ssba.position, ssba.note)
+
+    def merge_speaker_result(self, result, adj):
+        for side, pos in product(self.sides, self.positions):
+            cur_speaker = self.get_speaker(side, pos)
+            if cur_speaker is None:
+                self.set_speaker(side, pos, result.get_speaker(side, pos))
+            elif result.get_speaker(side, pos) != cur_speaker:
+                raise ResultError("Inconsistent speaker order", "speaker", adj, result.ballotsub, side, cur_speaker)
+
+            if not self.get_ghost(side, pos):
+                self.set_ghost(side, pos, result.get_ghost(side, pos))
+            elif not result.get_ghost(side, pos):
+                raise ResultError("Inconsistent ghost order", "ghost", adj, result.ballotsub, side, cur_speaker)
+
+            self.set_score(adj, side, pos, result.get_score(side, pos))
+            self.set_note(adj, side, pos, result.get_note(side, pos))
 
     def merge_speaker_result(self, result, adj):
         for side, pos in product(self.sides, self.positions):
@@ -993,6 +1018,14 @@ class DebateResultByAdjudicatorWithScores(DebateResultWithScoresMixin, DebateRes
                 "doesn't have a scoresheet.", adjudicator)
             return
 
+    def set_note(self, adjudicator, side, position, note):
+        try:
+            self.scoresheets[adjudicator].set_note(side, position, note)
+        except KeyError:
+            logger.exception("Tried to set note by adjudicator %s, but this adjudicator "
+                "doesn't have a scoresheet.", adjudicator)
+            return
+
     # --------------------------------------------------------------------------
     # Model fields
     # --------------------------------------------------------------------------
@@ -1022,6 +1055,10 @@ class DebateResultByAdjudicatorWithScores(DebateResultWithScoresMixin, DebateRes
     def speakerscorebyadj_field_score(self, adjudicator, side, position):
         return self.scoresheets[adjudicator].get_score(side, position)
     get_score = speakerscorebyadj_field_score
+
+    def speakerscorebyadj_field_note(self, adjudicator, side, position):
+        return self.scoresheets[adjudicator].get_note(side, position)
+    get_note = speakerscorebyadj_field_note
 
     def speakerscore_field_score(self, side, position):
         # Should be decision-decorated
