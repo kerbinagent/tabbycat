@@ -894,7 +894,7 @@ class ConsensusDebateResultWithScores(DebateResultWithScoresMixin, ConsensusDeba
 class DebateResultByAdjudicatorWithScores(DebateResultWithScoresMixin, DebateResultByAdjudicator):
     """Gives access to SpeakerScoreByAdj and scores of TeamScoreByAdj"""
 
-    speakerscorebyadj_fields = ['score']
+    speakerscorebyadj_fields = ['score', 'note']
 
     # --------------------------------------------------------------------------
     # Load and save methods
@@ -913,6 +913,8 @@ class DebateResultByAdjudicatorWithScores(DebateResultWithScoresMixin, DebateRes
         for ssba in speakerscorebyadjs:
             self.set_score(ssba.debate_adjudicator.adjudicator,
                            ssba.debate_team.side, ssba.position, ssba.score)
+            self.set_note(ssba.debate_adjudicator.adjudicator,
+                           ssba.debate_team.side, ssba.position, ssba.note)
 
     def save(self):
         super().save()
@@ -931,6 +933,14 @@ class DebateResultByAdjudicatorWithScores(DebateResultWithScoresMixin, DebateRes
             self.scoresheets[adjudicator].set_score(side, position, score)
         except KeyError:
             logger.exception("Tried to set score by adjudicator %s, but this adjudicator "
+                "doesn't have a scoresheet.", adjudicator)
+            return
+
+    def set_note(self, adjudicator, side, position, note):
+        try:
+            self.scoresheets[adjudicator].set_note(side, position, note)
+        except KeyError:
+            logger.exception("Tried to set note by adjudicator %s, but this adjudicator "
                 "doesn't have a scoresheet.", adjudicator)
             return
 
@@ -955,6 +965,10 @@ class DebateResultByAdjudicatorWithScores(DebateResultWithScoresMixin, DebateRes
     def speakerscorebyadj_field_score(self, adjudicator, side, position):
         return self.scoresheets[adjudicator].get_score(side, position)
     get_score = speakerscorebyadj_field_score
+
+    def speakerscorebyadj_field_note(self, adjudicator, side, position):
+        return self.scoresheets[adjudicator].get_note(side, position)
+    get_note = speakerscorebyadj_field_note
 
     def speakerscore_field_score(self, side, position):
         # Should be decision-decorated

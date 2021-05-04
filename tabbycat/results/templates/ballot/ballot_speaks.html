@@ -5,9 +5,9 @@
     <div class="col-2 pt-2 p-lg-2 pr-0 p-1 speaker-position-label">
       {{ position.name }}
     </div>
-
+    {% if not position.sub_score %}
     <div class="col mb-0 pr-md-2 pr-1 form-group {{ position.speaker.errors|yesno:'error,' }}">
-
+      
       {% if forloop.parentloop.parentloop.first %}
 
         {# On the first form, display the speaker selection dropdown. #}
@@ -31,8 +31,8 @@
       {% endif %}
 
     </div>
-
-    <div class="col-4 form-group {{ team.side_code }} pr-md-2 pr-1 score {{ position.score_errors|yesno:'error,' }}">
+    {% endif %}
+    <div class="col-4 form-group {{ team.side_code }}{% if position.sub_score %}_sub{% endif %} pr-md-2 pr-1 score {{ position.score_errors|yesno:'error,' }}">
       {{ position.score|addcss:"form-control" }}
       {{ position.score.errors }}
     </div>

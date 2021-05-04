@@ -1,4 +1,5 @@
 import logging
+import json
 from itertools import product
 
 from asgiref.sync import async_to_sync
@@ -115,6 +116,62 @@ class ReplyScoreField(BaseScoreField):
     DEFAULT_MIN_VALUE = 34.0
     DEFAULT_MAX_VALUE = 41.0
     DEFAULT_STEP_VALUE = 0.5
+
+class ContentScore(BaseScoreField):
+    CONFIG_MIN_VALUE_FIELD  = 'content_sub_score_min'
+    CONFIG_MAX_VALUE_FIELD  = 'content_sub_score_max'
+    CONFIG_STEP_VALUE_FIELD = 'content_sub_score_step'
+    DEFAULT_MIN_VALUE = 24.0
+    DEFAULT_MAX_VALUE = 32.0
+    DEFAULT_STEP_VALUE = 0.5
+
+class StyleScore(BaseScoreField):
+    CONFIG_MIN_VALUE_FIELD  = 'style_sub_score_min'
+    CONFIG_MAX_VALUE_FIELD  = 'style_sub_score_max'
+    CONFIG_STEP_VALUE_FIELD = 'style_sub_score_step'
+    DEFAULT_MIN_VALUE = 24.0
+    DEFAULT_MAX_VALUE = 32.0
+    DEFAULT_STEP_VALUE = 0.5
+
+class StrategyScore(BaseScoreField):
+    CONFIG_MIN_VALUE_FIELD  = 'strat_sub_score_min'
+    CONFIG_MAX_VALUE_FIELD  = 'strat_sub_score_max'
+    CONFIG_STEP_VALUE_FIELD = 'strat_sub_score_step'
+    DEFAULT_MIN_VALUE = 12.0
+    DEFAULT_MAX_VALUE = 16.0
+    DEFAULT_STEP_VALUE = 0.5
+
+class ReplyContentScore(BaseScoreField):
+    CONFIG_MIN_VALUE_FIELD  = 'reply_content_sub_score_min'
+    CONFIG_MAX_VALUE_FIELD  = 'reply_content_sub_score_max'
+    CONFIG_STEP_VALUE_FIELD = 'reply_content_sub_score_step'
+    DEFAULT_MIN_VALUE = 12.0
+    DEFAULT_MAX_VALUE = 16.0
+    DEFAULT_STEP_VALUE = 0.5
+
+class ReplyStyleScore(BaseScoreField):
+    CONFIG_MIN_VALUE_FIELD  = 'reply_style_sub_score_min'
+    CONFIG_MAX_VALUE_FIELD  = 'reply_style_sub_score_max'
+    CONFIG_STEP_VALUE_FIELD = 'reply_style_sub_score_step'
+    DEFAULT_MIN_VALUE = 12.0
+    DEFAULT_MAX_VALUE = 16.0
+    DEFAULT_STEP_VALUE = 0.5
+
+class ReplyStrategyScore(BaseScoreField):
+    CONFIG_MIN_VALUE_FIELD  = 'reply_strat_sub_score_min'
+    CONFIG_MAX_VALUE_FIELD  = 'reply_strat_sub_score_max'
+    CONFIG_STEP_VALUE_FIELD = 'reply_strat_sub_score_step'
+    DEFAULT_MIN_VALUE = 6.0
+    DEFAULT_MAX_VALUE = 8.0
+    DEFAULT_STEP_VALUE = 0.5
+
+class POIAdjustment(BaseScoreField):
+    CONFIG_MIN_VALUE_FIELD  = 'poi_sub_score_min'
+    CONFIG_MAX_VALUE_FIELD  = 'poi_sub_score_max'
+    CONFIG_STEP_VALUE_FIELD = 'poi_sub_score_step'
+    DEFAULT_MIN_VALUE = -2.0
+    DEFAULT_MAX_VALUE = 2.0
+    DEFAULT_STEP_VALUE = 1
 
 
 # ==============================================================================
@@ -450,6 +507,30 @@ class BaseBallotSetForm(BaseResultForm):
 class ScoresMixin:
 
     has_scores = True
+    sub_score_map = {
+        "content": ContentScore,
+        "style": StyleScore,
+        "strat": StrategyScore,
+        "reply_content": ReplyContentScore,
+        "reply_style": ReplyStyleScore,
+        "reply_strat": ReplyStrategyScore,
+        "poi": POIAdjustment,
+    }
+    sub_pos_name_suffix = {
+        "content": " Content",
+        "style": " Style",
+        "strat": " Strategy",
+        "reply_content": " Content",
+        "reply_style": " Style",
+        "reply_strat": " Strategy",
+        "poi": " POI Adjustment",
+    }
+
+    def _list_sub_scores(self, pos):
+        if pos == self.reply_position:
+            return ["reply_content", "reply_style", "reply_strat"]
+        else:
+            return ["content", "style", "strat", "poi"]
 
     # --------------------------------------------------------------------------
     # Field names and field convenience functions
@@ -613,7 +694,7 @@ class ScoresMixin:
         for team in self.debate.teams:
             yield self['team_%d' % team.id]
 
-    def scoresheet(self, fieldname_score_func):
+    def scoresheet(self, fieldname_score_func, fieldname_sub_score_func = None):
         """Returns a list of dictionaries for a single scoresheet, to allow for
         easy iteration of the form. The function `fieldname_score_func` should
         take two arguments `(side, pos)`. This function is called by the
@@ -627,12 +708,23 @@ class ScoresMixin:
                 "speakers": [],
             }
             for pos, pos_name in zip(self.positions, pos_names):
+                if fieldname_sub_score_func:
+                    for sub in self._list_sub_scores(pos):
+                        side_dict["speakers"].append({
+                        "pos": pos,
+                        "name": pos_name + self.sub_pos_name_suffix[sub],
+                        "speaker": self[self._fieldname_speaker(side, pos)],
+                        "ghost": self[self._fieldname_ghost(side, pos)],
+                        "score": self[fieldname_sub_score_func(side, pos, sub)],
+                        "sub_score": True
+                    })
                 side_dict["speakers"].append({
                     "pos": pos,
                     "name": pos_name,
                     "speaker": self[self._fieldname_speaker(side, pos)],
                     "ghost": self[self._fieldname_ghost(side, pos)],
                     "score": self[fieldname_score_func(side, pos)],
+                    "sub_score": False
                 })
             teams.append(side_dict)
         return teams
@@ -765,10 +857,14 @@ class PerAdjudicatorBallotSetForm(ScoresMixin, BaseBallotSetForm):
     adjudications."""
 
     result_class = DebateResultByAdjudicatorWithScores
-
+    
     @staticmethod
     def _fieldname_score(adj, side, pos):
         return '%(side)s_score_a%(adj)d_s%(pos)d' % {'adj': adj.id, 'side': side, 'pos': pos}
+
+    @staticmethod
+    def _fieldname_sub_score(adj, side, pos, sub):
+        return '%(side)s_score_a%(adj)d_s%(pos)d_%(sub)s' % {'adj': adj.id, 'side': side, 'pos': pos, 'sub': sub}
 
     @staticmethod
     def _fieldname_declared_winner(adj):
@@ -779,13 +875,19 @@ class PerAdjudicatorBallotSetForm(ScoresMixin, BaseBallotSetForm):
          - <side>_score_a#_s#,  one for each score
         """
         for side, pos in product(self.sides, self.positions):
-            scorefield = ReplyScoreField if (pos == self.reply_position) else SubstantiveScoreField
             for adj in self.adjudicators:
-                self.fields[self._fieldname_score(adj, side, pos)] = scorefield(
-                    widget=forms.NumberInput(attrs={'class': 'required number'}),
-                    tournament=self.tournament,
-                    required=True,
-                )
+                for sub in self._list_sub_scores(pos):
+                    self.fields[self._fieldname_sub_score(adj, side, pos, sub)] = self.sub_score_map[sub](
+                        widget=forms.NumberInput(attrs={'class': 'required number'}),
+                        tournament=self.tournament,
+                        required=True,
+                    )
+                created_field = ReplyScoreField if pos == self.reply_position else SubstantiveScoreField
+                self.fields[self._fieldname_score(adj, side, pos)] = created_field(
+                        widget=forms.NumberInput(attrs={'class': 'required number'}),
+                        tournament=self.tournament,
+                        required=True,
+                    )
         if self.using_declared_winner:
             for adj in self.adjudicators:
                 self.fields[self._fieldname_declared_winner(adj)] = self.create_declared_winner_dropdown()
@@ -798,6 +900,13 @@ class PerAdjudicatorBallotSetForm(ScoresMixin, BaseBallotSetForm):
                 score = result.get_score(adj, side, pos)
                 coerce_for_ui = self.fields[self._fieldname_score(adj, side, pos)].coerce_for_ui
                 initial[self._fieldname_score(adj, side, pos)] = coerce_for_ui(score)
+                note = result.get_note(adj, side, pos)
+                if (note is not None) and (len(note) > 0):
+                    subs = json.loads(note)
+                    for sub in subs:
+                        coerce_for_ui = self.fields[self._fieldname_sub_score(adj, side, pos, sub)].coerce_for_ui
+                        initial[self._fieldname_sub_score(adj, side, pos, sub)] = subs[sub]
+
 
             if self.using_declared_winner:
                 initial[self._fieldname_declared_winner(adj)] = result.get_winner(adj)
@@ -809,8 +918,9 @@ class PerAdjudicatorBallotSetForm(ScoresMixin, BaseBallotSetForm):
         order = []
         for adj in self.adjudicators:
             for side, pos in product(self.sides, self.positions):
+                for sub in self._list_sub_scores(pos):
+                    order.append(self._fieldname_sub_score(adj, side, pos, sub))
                 order.append(self._fieldname_score(adj, side, pos))
-
             if self.using_declared_winner:
                 order.append(self._fieldname_declared_winner(adj))
         return order
@@ -853,12 +963,22 @@ class PerAdjudicatorBallotSetForm(ScoresMixin, BaseBallotSetForm):
                         _("The margin (%(margin).1f) in the ballot of adjudicator %(adjudicator)s exceeds the maximum allowable margin (%(max_margin).1f)."),
                         params={'adjudicator': adj.name, 'margin': margin, 'max_margin': self.max_margin}, code='max_margin',
                     ))
+                for side, pos in product(self.sides, self.positions):
+                    sub_sum = sum(cleaned_data[self._fieldname_sub_score(adj, side, pos, sub)] for sub in self._list_sub_scores(pos))
+                    input_sum = cleaned_data[self._fieldname_score(adj, side, pos)]
+                    if sub_sum != input_sum:
+                        self.add_error(None, forms.ValidationError(
+                            f"Sub-score has sum {sub_sum}, Input score is {input_sum} for Side {side} Position {pos} from Adjudicator {adj}",
+                            code="inconsistent_sum"
+                        ))
 
     def populate_result_with_scores(self, result):
         for adj in self.adjudicators:
             for side, pos in product(self.sides, self.positions):
                 score = self.cleaned_data[self._fieldname_score(adj, side, pos)]
                 result.set_score(adj, side, pos, score)
+                note_payload = {sub: self.cleaned_data[self._fieldname_sub_score(adj, side, pos, sub)] for sub in self._list_sub_scores(pos)}
+                result.set_note(adj, side, pos, json.dumps(note_payload))
 
             if self.declared_winner not in ['none', 'high-points']:
                 result.set_winners(adj, set([self.cleaned_data.get(self._fieldname_declared_winner(adj))]))
@@ -875,6 +995,7 @@ class PerAdjudicatorBallotSetForm(ScoresMixin, BaseBallotSetForm):
                 "adjudicator": adj,
                 "teams": self.scoresheet(
                     lambda side, pos: self._fieldname_score(adj, side, pos),
+                    lambda side, pos, sub: self._fieldname_sub_score(adj, side, pos, sub)
                 ),
             }
             if self.using_declared_winner:

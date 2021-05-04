@@ -101,7 +101,7 @@ class SpeakerScoreAdmin(TabbycatModelAdminFieldsMixin, admin.ModelAdmin):
 @admin.register(SpeakerScoreByAdj)
 class SpeakerScoreByAdjAdmin(TabbycatModelAdminFieldsMixin, admin.ModelAdmin):
     list_display = ('id', 'ballot_submission', 'get_round', 'get_adj_name', 'get_team',
-                    'get_speaker_name', 'position', 'score')
+                    'get_speaker_name', 'position', 'score', 'note')
     search_fields = ('debate_team__debate__round__seq',
                      'debate_team__team__reference', 'debate_team__team__institution__code',
                      'debate_adjudicator__adjudicator__name')

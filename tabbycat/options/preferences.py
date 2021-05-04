@@ -83,6 +83,183 @@ class ReplyScoreStep(FloatPreference):
     name = 'reply_score_step'
     default = 0.5
 
+@tournament_preferences_registry.register
+class MinimumContentSubScore(FloatPreference):
+    help_text = _("Minimum allowed for scores for content subscore")
+    verbose_name = _("Minimum Content Sub-score")
+    section = scoring
+    name = 'content_sub_score_min'
+    default = 24.0
+
+@tournament_preferences_registry.register
+class MaximumContentSubScore(FloatPreference):
+    help_text = _("Maximum allowed for scores for content subscore")
+    verbose_name = _("Maximum Content Sub-score")
+    section = scoring
+    name = 'content_sub_score_max'
+    default = 32.0
+
+@tournament_preferences_registry.register
+class ContentSubScoreStep(FloatPreference):
+    help_text = _("Score steps allowed for scores for content subscore")
+    verbose_name = _("Score steps allowed for content sub-score")
+    section = scoring
+    name = 'content_sub_score_step'
+    default = 0.5
+
+@tournament_preferences_registry.register
+class MinimumStyleSubScore(FloatPreference):
+    help_text = _("Minimum allowed for scores for Style subscore")
+    verbose_name = _("Minimum Style Sub-score")
+    section = scoring
+    name = 'style_sub_score_min'
+    default = 24.0
+
+@tournament_preferences_registry.register
+class MaximumStyleSubScore(FloatPreference):
+    help_text = _("Maximum allowed for scores for Style subscore")
+    verbose_name = _("Maximum Style Sub-score")
+    section = scoring
+    name = 'style_sub_score_max'
+    default = 32.0
+
+@tournament_preferences_registry.register
+class StyleSubScoreStep(FloatPreference):
+    help_text = _("Score steps allowed for scores for Style subscore")
+    verbose_name = _("Score steps allowed for Style sub-score")
+    section = scoring
+    name = 'style_sub_score_step'
+    default = 0.5    
+
+
+@tournament_preferences_registry.register
+class MinimumStratSubScore(FloatPreference):
+    help_text = _("Minimum allowed for scores for Strat subscore")
+    verbose_name = _("Minimum strategy Sub-score")
+    section = scoring
+    name = 'strat_sub_score_min'
+    default = 12.0
+
+@tournament_preferences_registry.register
+class MaximumStratSubScore(FloatPreference):
+    help_text = _("Maximum allowed for scores for Strat subscore")
+    verbose_name = _("Maximum strategy Sub-score")
+    section = scoring
+    name = 'strat_sub_score_max'
+    default = 16.0
+
+@tournament_preferences_registry.register
+class ReplyStratSubScoreStep(FloatPreference):
+    help_text = _("Score steps allowed for scores for Strat subscore")
+    verbose_name = _("Score steps allowed for strategy sub-score")
+    section = scoring
+    name = 'strat_sub_score_step'
+    default = 0.5
+
+@tournament_preferences_registry.register
+class ReplyMinimumContentSubScore(FloatPreference):
+    help_text = _("Minimum allowed for reply scores for content subscore")
+    verbose_name = _("Minimum Content Sub-score")
+    section = scoring
+    name = 'reply_content_sub_score_min'
+    default = 12.0
+
+@tournament_preferences_registry.register
+class ReplyMaximumContentSubScore(FloatPreference):
+    help_text = _("Maximum allowed for reply scores for content subscore")
+    verbose_name = _("Maximum Content Sub-score")
+    section = scoring
+    name = 'reply_content_sub_score_max'
+    default = 16.0
+
+@tournament_preferences_registry.register
+class ReplyContentSubScoreStep(FloatPreference):
+    help_text = _("Score steps allowed for reply scores for content subscore")
+    verbose_name = _("Score steps allowed for content sub-score")
+    section = scoring
+    name = 'reply_content_sub_score_step'
+    default = 0.5
+
+@tournament_preferences_registry.register
+class ReplyMinimumStyleSubScore(FloatPreference):
+    help_text = _("Minimum allowed for reply scores for Style subscore")
+    verbose_name = _("Minimum Style Sub-score")
+    section = scoring
+    name = 'reply_style_sub_score_min'
+    default = 12.0
+
+@tournament_preferences_registry.register
+class ReplyMaximumStyleSubScore(FloatPreference):
+    help_text = _("Maximum allowed for reply scores for Style subscore")
+    verbose_name = _("Maximum Style Sub-score")
+    section = scoring
+    name = 'reply_style_sub_score_max'
+    default = 16.0
+
+@tournament_preferences_registry.register
+class ReplyStyleSubScoreStep(FloatPreference):
+    help_text = _("Score steps allowed for reply scores for Style subscore")
+    verbose_name = _("Score steps allowed for Style sub-score")
+    section = scoring
+    name = 'reply_style_sub_score_step'
+    default = 0.5    
+
+
+@tournament_preferences_registry.register
+class ReplyMinimumStratSubScore(FloatPreference):
+    help_text = _("Minimum allowed for reply scores for Strat subscore")
+    verbose_name = _("Minimum strategy Sub-score")
+    section = scoring
+    name = 'reply_strat_sub_score_min'
+    default = 6.0
+
+@tournament_preferences_registry.register
+class ReplyMaximumStratSubScore(FloatPreference):
+    help_text = _("Maximum allowed for reply scores for Strat subscore")
+    verbose_name = _("Maximum strategy Sub-score")
+    section = scoring
+    name = 'reply_strat_sub_score_max'
+    default = 8.0
+
+@tournament_preferences_registry.register
+class ReplyStratSubScoreStep(FloatPreference):
+    help_text = _("Score steps allowed for reply scores for Strat subscore")
+    verbose_name = _("Score steps allowed for strategy sub-score")
+    section = scoring
+    name = 'reply_strat_sub_score_step'
+    default = 0.5    
+
+@tournament_preferences_registry.register
+class MinimumPoiSubScore(FloatPreference):
+    help_text = _("Minimum allowed for scores for Poi subscore")
+    verbose_name = _("Minimum poi Sub-score")
+    section = scoring
+    name = 'poi_sub_score_min'
+    default = -2.0
+
+@tournament_preferences_registry.register
+class MaximumPoiSubScore(FloatPreference):
+    help_text = _("Maximum allowed for scores for Poi subscore")
+    verbose_name = _("Maximum poi Sub-score")
+    section = scoring
+    name = 'poi_sub_score_max'
+    default = 2.0
+
+@tournament_preferences_registry.register
+class PoiSubScoreStep(FloatPreference):
+    help_text = _("Score steps allowed for scores for Poi subscore")
+    verbose_name = _("Score steps allowed for poi sub-score")
+    section = scoring
+    name = 'poi_sub_score_step'
+    default = 0.5
+
+@tournament_preferences_registry.register
+class IncludeSubscore(BooleanPreference):
+    help_text = _("If checked, a speaker score will be decomposed into content, style, strategy subscores")
+    verbose_name = _("Include sub scores")
+    section = scoring
+    name = 'include_sub_scores'
+    default = False    
 
 @tournament_preferences_registry.register
 class MarginIncludesDissent(BooleanPreference):
