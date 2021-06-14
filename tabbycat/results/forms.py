@@ -743,6 +743,10 @@ class SingleBallotSetForm(ScoresMixin, BaseBallotSetForm):
         return '%(side)s_score_s%(pos)d' % {'side': side, 'pos': pos}
 
     @staticmethod
+    def _fieldname_sub_score(side, pos, sub):
+        return '%(side)s_score_s%(pos)d_%(sub)s' % {'side': side, 'pos': pos, 'sub': sub}
+
+    @staticmethod
     def _fieldname_declared_winner():
         return 'declared_winner'
 
@@ -751,6 +755,12 @@ class SingleBallotSetForm(ScoresMixin, BaseBallotSetForm):
          - <side>_score_s#,  one for each score
         """
         for side, pos in product(self.sides, self.positions):
+            for sub in self._list_sub_scores(pos):
+                    self.fields[self._fieldname_sub_score(side, pos, sub)] = self.sub_score_map[sub](
+                        widget=forms.NumberInput(attrs={'class': 'required number'}),
+                        tournament=self.tournament,
+                        required=True,
+                    )
             scorefield = ReplyScoreField if (pos == self.reply_position) else SubstantiveScoreField
             self.fields[self._fieldname_score(side, pos)] = scorefield(
                 widget=forms.NumberInput(attrs={'class': 'required number'}),
@@ -768,6 +778,12 @@ class SingleBallotSetForm(ScoresMixin, BaseBallotSetForm):
             score = result.get_score(side, pos)
             coerce_for_ui = self.fields[self._fieldname_score(side, pos)].coerce_for_ui
             initial[self._fieldname_score(side, pos)] = coerce_for_ui(score)
+            note = result.get_note(side, pos)
+            if (note is not None) and (len(note) > 0):
+                subs = json.loads(note)
+                for sub in subs:
+                    coerce_for_ui = self.fields[self._fieldname_sub_score(side, pos, sub)].coerce_for_ui
+                    initial[self._fieldname_sub_score(side, pos, sub)] = subs[sub]
 
         if self.using_declared_winner:
             initial[self._fieldname_declared_winner()] = result.winning_side()
@@ -778,6 +794,8 @@ class SingleBallotSetForm(ScoresMixin, BaseBallotSetForm):
         """Lists all the score fields. Called by super().set_tab_indices()."""
         order = []
         for side, pos in product(self.sides, self.positions):
+            for sub in self._list_sub_scores(pos):
+                    order.append(self._fieldname_sub_score(side, pos, sub))
             order.append(self._fieldname_score(side, pos))
 
         if self.using_declared_winner:
@@ -832,11 +850,21 @@ class SingleBallotSetForm(ScoresMixin, BaseBallotSetForm):
                         _("The margin (%(margin).1f) exceeds the maximum allowable margin (%(max_margin).1f)."),
                         params={'margin': margin, 'max_margin': self.max_margin}, code='max_margin',
                     ))
+            for side, pos in product(self.sides, self.positions):
+                sub_sum = sum(cleaned_data[self._fieldname_sub_score(side, pos, sub)] for sub in self._list_sub_scores(pos))
+                input_sum = cleaned_data[self._fieldname_score(side, pos)]
+                if sub_sum != input_sum:
+                    self.add_error(None, forms.ValidationError(
+                        f"Sub-score has sum {sub_sum}, Input score is {input_sum} for Side {side} Position {pos}",
+                        code="inconsistent_sum"
+                    ))
 
     def populate_result_with_scores(self, result):
         for side, pos in product(self.sides, self.positions):
             score = self.cleaned_data[self._fieldname_score(side, pos)]
             result.set_score(side, pos, score)
+            note_payload = {sub: self.cleaned_data[self._fieldname_sub_score(side, pos, sub)] for sub in self._list_sub_scores(pos)}
+            result.set_note(side, pos, json.dumps(note_payload))
 
         if self.declared_winner not in ['none', 'high-points']:
             result.set_winners(set([self.cleaned_data[self._fieldname_declared_winner()]]))
@@ -848,7 +876,7 @@ class SingleBallotSetForm(ScoresMixin, BaseBallotSetForm):
     def scoresheets(self):
         """Generates a sequence of nested dicts that allows for easy iteration
         through the form. Used in the ballot_set.html.html template."""
-        sheets = [{"teams": self.scoresheet(self._fieldname_score)}]
+        sheets = [{"teams": self.scoresheet(self._fieldname_score, self._fieldname_sub_score)}]
 
         if self.using_declared_winner:
             sheets[0]['declared_winner'] = self[self._fieldname_declared_winner()]

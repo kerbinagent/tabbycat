@@ -605,7 +605,7 @@ class DebateResultByAdjudicator(BaseDebateResult):
 class DebateResultWithScoresMixin:
     """Mixin to provide methods to interact with SpeakerScore."""
 
-    speakerscore_fields = ['score', 'speaker', 'ghost']
+    speakerscore_fields = ['score', 'speaker', 'ghost', 'note']
 
     uses_declared_winners = False
     uses_speakers = True
@@ -885,9 +885,13 @@ class ConsensusDebateResultWithScores(DebateResultWithScoresMixin, ConsensusDeba
 
         for ss in speakerscore:
             self.set_score(ss.debate_team.side, ss.position, ss.score)
+            self.set_note(ss.debate_team.side, ss.position, ss.note)
 
     def set_score(self, side, position, score):
         self.scoresheet.set_score(side, position, score)
+
+    def set_note(self, side, position, note):
+        self.scoresheet.set_note(side, position, note)
 
     # --------------------------------------------------------------------------
     # Model fields
@@ -897,6 +901,10 @@ class ConsensusDebateResultWithScores(DebateResultWithScoresMixin, ConsensusDeba
         return self.scoresheet.get_score(side, position)
 
     get_score = speakerscore_field_score
+
+    def speakerscore_field_note(self, side, position):
+        return self.scoresheet.get_note(side, position)
+    get_note = speakerscore_field_note
 
     def teamscore_field_score(self, side):
         return self.scoresheet.get_total(side)
