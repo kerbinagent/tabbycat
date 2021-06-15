@@ -949,6 +949,7 @@ class DebateResultByAdjudicatorWithScores(DebateResultWithScoresMixin, DebateRes
                 raise ResultError("Inconsistent ghost order", "ghost", adj, result.ballotsub, side, cur_speaker)
 
             self.set_score(adj, side, pos, result.get_score(side, pos))
+            self.set_note(adj, side, pos, result.get_note(side, pos))
 
     def save(self):
         super().save()
