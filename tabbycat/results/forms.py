@@ -65,6 +65,7 @@ class BaseScoreField(forms.FloatField):
 
         kwargs.setdefault('min_value', self.coerce_for_ui(min_value))
         kwargs.setdefault('max_value', self.coerce_for_ui(max_value))
+        kwargs.setdefault('initial', self.DEFAULT_AVERAGE_VALUE)
 
         super().__init__(*args, **kwargs)
 
@@ -88,7 +89,7 @@ class BaseScoreField(forms.FloatField):
 
     def coerce_for_ui(self, x):
         if x is None:
-            return None
+            return self.DEFAULT_AVERAGE_VALUE
         if self.step_value % 1 == 0:
             return int(x)
         else:
@@ -107,6 +108,7 @@ class SubstantiveScoreField(BaseScoreField):
     DEFAULT_MIN_VALUE = 68
     DEFAULT_MAX_VALUE = 82
     DEFAULT_STEP_VALUE = 1
+    DEFAULT_AVERAGE_VALUE=70
 
 
 class ReplyScoreField(BaseScoreField):
@@ -116,6 +118,7 @@ class ReplyScoreField(BaseScoreField):
     DEFAULT_MIN_VALUE = 34.0
     DEFAULT_MAX_VALUE = 41.0
     DEFAULT_STEP_VALUE = 0.5
+    DEFAULT_AVERAGE_VALUE=35
 
 class ContentScore(BaseScoreField):
     CONFIG_MIN_VALUE_FIELD  = 'content_sub_score_min'
@@ -124,6 +127,7 @@ class ContentScore(BaseScoreField):
     DEFAULT_MIN_VALUE = 24.0
     DEFAULT_MAX_VALUE = 32.0
     DEFAULT_STEP_VALUE = 0.5
+    DEFAULT_AVERAGE_VALUE=28
 
 class StyleScore(BaseScoreField):
     CONFIG_MIN_VALUE_FIELD  = 'style_sub_score_min'
@@ -132,6 +136,7 @@ class StyleScore(BaseScoreField):
     DEFAULT_MIN_VALUE = 24.0
     DEFAULT_MAX_VALUE = 32.0
     DEFAULT_STEP_VALUE = 0.5
+    DEFAULT_AVERAGE_VALUE=28
 
 class StrategyScore(BaseScoreField):
     CONFIG_MIN_VALUE_FIELD  = 'strat_sub_score_min'
@@ -140,6 +145,7 @@ class StrategyScore(BaseScoreField):
     DEFAULT_MIN_VALUE = 12.0
     DEFAULT_MAX_VALUE = 16.0
     DEFAULT_STEP_VALUE = 0.5
+    DEFAULT_AVERAGE_VALUE=14
 
 class ReplyContentScore(BaseScoreField):
     CONFIG_MIN_VALUE_FIELD  = 'reply_content_sub_score_min'
@@ -148,6 +154,7 @@ class ReplyContentScore(BaseScoreField):
     DEFAULT_MIN_VALUE = 12.0
     DEFAULT_MAX_VALUE = 16.0
     DEFAULT_STEP_VALUE = 0.5
+    DEFAULT_AVERAGE_VALUE=14
 
 class ReplyStyleScore(BaseScoreField):
     CONFIG_MIN_VALUE_FIELD  = 'reply_style_sub_score_min'
@@ -156,6 +163,7 @@ class ReplyStyleScore(BaseScoreField):
     DEFAULT_MIN_VALUE = 12.0
     DEFAULT_MAX_VALUE = 16.0
     DEFAULT_STEP_VALUE = 0.5
+    DEFAULT_AVERAGE_VALUE=14
 
 class ReplyStrategyScore(BaseScoreField):
     CONFIG_MIN_VALUE_FIELD  = 'reply_strat_sub_score_min'
@@ -164,6 +172,7 @@ class ReplyStrategyScore(BaseScoreField):
     DEFAULT_MIN_VALUE = 6.0
     DEFAULT_MAX_VALUE = 8.0
     DEFAULT_STEP_VALUE = 0.5
+    DEFAULT_AVERAGE_VALUE=7
 
 class POIAdjustment(BaseScoreField):
     CONFIG_MIN_VALUE_FIELD  = 'poi_sub_score_min'
@@ -172,6 +181,7 @@ class POIAdjustment(BaseScoreField):
     DEFAULT_MIN_VALUE = -2.0
     DEFAULT_MAX_VALUE = 2.0
     DEFAULT_STEP_VALUE = 1
+    DEFAULT_AVERAGE_VALUE=0
 
 
 # ==============================================================================
@@ -711,6 +721,14 @@ class ScoresMixin:
                 "speakers": [],
             }
             for pos, pos_name in zip(self.positions, pos_names):
+                side_dict["speakers"].append({
+                    "pos": pos,
+                    "name": pos_name,
+                    "speaker": self[self._fieldname_speaker(side, pos)],
+                    "ghost": self[self._fieldname_ghost(side, pos)],
+                    "score": self[fieldname_score_func(side, pos)],
+                    "sub_score": False
+                })
                 if fieldname_sub_score_func:
                     for sub in self._list_sub_scores(pos):
                         side_dict["speakers"].append({
@@ -721,14 +739,6 @@ class ScoresMixin:
                         "score": self[fieldname_sub_score_func(side, pos, sub)],
                         "sub_score": True
                     })
-                side_dict["speakers"].append({
-                    "pos": pos,
-                    "name": pos_name,
-                    "speaker": self[self._fieldname_speaker(side, pos)],
-                    "ghost": self[self._fieldname_ghost(side, pos)],
-                    "score": self[fieldname_score_func(side, pos)],
-                    "sub_score": False
-                })
             teams.append(side_dict)
         return teams
 
@@ -794,9 +804,9 @@ class SingleBallotSetForm(ScoresMixin, BaseBallotSetForm):
         """Lists all the score fields. Called by super().set_tab_indices()."""
         order = []
         for side, pos in product(self.sides, self.positions):
+            order.append(self._fieldname_score(side, pos))
             for sub in self._list_sub_scores(pos):
                     order.append(self._fieldname_sub_score(side, pos, sub))
-            order.append(self._fieldname_score(side, pos))
 
         if self.using_declared_winner:
             order.append(self._fieldname_declared_winner())
@@ -949,9 +959,9 @@ class PerAdjudicatorBallotSetForm(ScoresMixin, BaseBallotSetForm):
         order = []
         for adj in self.adjudicators:
             for side, pos in product(self.sides, self.positions):
+                order.append(self._fieldname_score(adj, side, pos))
                 for sub in self._list_sub_scores(pos):
                     order.append(self._fieldname_sub_score(adj, side, pos, sub))
-                order.append(self._fieldname_score(adj, side, pos))
             if self.using_declared_winner:
                 order.append(self._fieldname_declared_winner(adj))
         return order

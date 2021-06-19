@@ -31,11 +31,22 @@
       {% endif %}
 
     </div>
-    {% endif %}
-    <div class="col-4 form-group {{ team.side_code }}{% if position.sub_score %}_sub{% endif %} pr-md-2 pr-1 score {{ position.score_errors|yesno:'error,' }}">
+    {% else %}
+    <div class="col-4 form-group {{ team.side_code }}_sub pr-md-2 pr-1 score {{ position.score_errors|yesno:'error,' }}">
       {{ position.score|addcss:"form-control" }}
       {{ position.score.errors }}
     </div>
-
+    {% endif %}
   </div>
+  {% if not position.sub_score %}
+  <div class="row">
+    <div class="col-2 pt-2 p-lg-2 pr-0 p-1 speaker-position-label">
+      {{ position.name }} Total
+    </div>
+    <div class="col-4 form-group {{ team.side_code }} pr-md-2 pr-1 score {{ position.score_errors|yesno:'error,' }}">
+      {{ position.score|addcss:"form-control" }}
+      {{ position.score.errors }}
+    </div>
+  </div>
+  {% endif %}
 </div>
