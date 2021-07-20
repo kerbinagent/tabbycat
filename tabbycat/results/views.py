@@ -708,9 +708,9 @@ class PrivateUrlBallotScoresheetView(RoundMixin, SingleObjectByRandomisedUrlMixi
         return True
 
     def check_permissions(self):
-        if not self.object.ballotsubmission_set.filter(discarded=False).exists():
+        if not self.object.ballotsubmission_set.filter(confirmed=True).exists():
             logger.warning("Refused public view of ballots for %s: no ballot", self.object)
-            return (404, _("There is no result yet for debate %s.") % self.matchup_description())
+            return (404, _("There is no confirmed result yet for debate %s.") % self.matchup_description())
 
     def get_context_data(self, **kwargs):
         ballot = self.object.ballotsubmission_set.filter(discarded=False).order_by('version').last()
