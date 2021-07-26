@@ -713,7 +713,7 @@ class PrivateUrlBallotScoresheetView(RoundMixin, SingleObjectByRandomisedUrlMixi
             return (404, _("There is no confirmed result yet for debate %s.") % self.matchup_description())
 
     def get_context_data(self, **kwargs):
-        ballot = self.object.ballotsubmission_set.filter(discarded=False).order_by('version').last()
+        ballot = self.object.ballotsubmission_set.filter(confirmed=True).order_by('version').last()
         kwargs['motion'] = ballot.motion
         kwargs['result'] = ballot.result
         kwargs['use_code_names'] = use_team_code_names(self.tournament, False)
