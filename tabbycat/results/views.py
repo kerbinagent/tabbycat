@@ -611,7 +611,9 @@ class OldPublicNewBallotSetByRandomisedUrlView(SingleObjectByRandomisedUrlMixin,
         return reverse_tournament('privateurls-person-index', self.tournament, kwargs={'url_key': self.kwargs['url_key']})
 
     def is_page_enabled(self, tournament):
-        return tournament.pref('participant_ballots') == 'private-urls'
+        adj = Adjudicator.objects.get(url_key=self.kwargs.get('url_key'))
+        debateadj = DebateAdjudicator.objects.get(adjudicator=adj, debate__round=self.tournament.current_round)
+        return tournament.pref('participant_ballots') == 'private-urls' and (not debateadj.type == DebateAdjudicator.TYPE_TRAINEE)
 
 
 class PostPublicBallotSetSubmissionURLView(TournamentMixin, TemplateView):
