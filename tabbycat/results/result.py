@@ -965,7 +965,7 @@ class DebateResultByAdjudicatorWithScores(DebateResultWithScoresMixin, DebateRes
             self.set_score(ssba.debate_adjudicator.adjudicator,
                            ssba.debate_team.side, ssba.position, ssba.score)
             self.set_note(ssba.debate_adjudicator.adjudicator,
-                           ssba.debate_team.side, ssba.position, ssba.note)
+                           ssba.debate_team.side, ssba.position, ssba.note)    
 
     def merge_speaker_result(self, result, adj):
         for side, pos in product(self.sides, self.positions):
@@ -982,21 +982,6 @@ class DebateResultByAdjudicatorWithScores(DebateResultWithScoresMixin, DebateRes
 
             self.set_score(adj, side, pos, result.get_score(side, pos))
             self.set_note(adj, side, pos, result.get_note(side, pos))
-
-    def merge_speaker_result(self, result, adj):
-        for side, pos in product(self.sides, self.positions):
-            cur_speaker = self.get_speaker(side, pos)
-            if cur_speaker is None:
-                self.set_speaker(side, pos, result.get_speaker(side, pos))
-            elif result.get_speaker(side, pos) != cur_speaker:
-                raise ResultError("Inconsistent speaker order", "speaker", adj, result.ballotsub, side, cur_speaker)
-
-            if not self.get_ghost(side, pos):
-                self.set_ghost(side, pos, result.get_ghost(side, pos))
-            elif not result.get_ghost(side, pos):
-                raise ResultError("Inconsistent ghost order", "ghost", adj, result.ballotsub, side, cur_speaker)
-
-            self.set_score(adj, side, pos, result.get_score(side, pos))
 
     def save(self):
         super().save()
